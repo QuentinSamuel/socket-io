@@ -1,4 +1,6 @@
 const express = require("express");
+const http = require("http");
+const socketIO = require("socket.io");
 const path = require("path");
 const cors = require("cors");
 const router = require("./router");
@@ -6,12 +8,50 @@ const router = require("./router");
 const app = express();
 
 // use some application-level middlewares
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL ?? "http://localhost:3000",
-    optionsSuccessStatus: 200,
-  })
-);
+const corsOptions = {
+  origin: process.env.FRONTEND_URL ?? "http://localhost:3000",
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+
+const server = http.createServer(app);
+
+const io = socketIO(server, {
+  cors: corsOptions,
+});
+let interval;
+
+const getApiAndEmit = (socket) => {
+  const response = new Date();
+  socket.emit("Fromapi", response);
+};
+
+io.on("connection", (socket) => {
+  console.warn("a user connected");
+  if (interval) {
+    clearInterval(interval);
+  }
+  interval = setInterval(() => {
+    getApiAndEmit(socket);
+  }, 1000);
+  socket.on("disconnect", () => {
+    console.warn("user disconnected");
+    clearInterval(interval);
+  });
+});
+
+io.on("connection", (socket) => {
+  socket.on("ChatMessage", (message) => {
+    io.emit("ChatMessage", message);
+  });
+});
+
+const getMsgAndEmit = (socket) => {
+  const chatList = [];
+  const response = chatList.push(message);
+  socket.emit("Fromapi", response);
+};
 
 app.use(express.json());
 
@@ -25,11 +65,11 @@ app.use(express.static(path.join(__dirname, "..", "..", "frontend", "dist")));
 app.use(router);
 
 // Redirect all requests to the REACT app
-app.get("*", (req, res) => {
+/* app.get("*", (req, res) => {
   res.sendFile(
     path.join(__dirname, "..", "..", "frontend", "dist", "index.html")
   );
-});
+}); */
 
 // ready to export
-module.exports = app;
+module.exports = server;
