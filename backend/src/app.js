@@ -20,38 +20,36 @@ const server = http.createServer(app);
 const io = socketIO(server, {
   cors: corsOptions,
 });
-let interval;
-
-const getApiAndEmit = (socket) => {
-  const response = new Date();
-  socket.emit("Fromapi", response);
-};
 
 io.on("connection", (socket) => {
   console.warn("a user connected");
-  if (interval) {
-    clearInterval(interval);
-  }
-  interval = setInterval(() => {
-    getApiAndEmit(socket);
-  }, 1000);
+
+  socket.on("message", (message) => {
+    socket.broadcast.emit("message", message);
+  });
   socket.on("disconnect", () => {
     console.warn("user disconnected");
-    clearInterval(interval);
   });
 });
 
-io.on("connection", (socket) => {
-  socket.on("ChatMessage", (message) => {
-    io.emit("ChatMessage", message);
-  });
-});
+// const getMsgAndEmit = (socket) => {
+//   const response = New Msg()
+//   socket.emit("Fromapi", response);
+// };
 
-const getMsgAndEmit = (socket) => {
-  const chatList = [];
-  const response = chatList.push(message);
-  socket.emit("Fromapi", response);
-};
+// io.on("connection", (socket) => {
+//   console.warn("msg from frontend");
+//   if (interval) {
+//     clearInterval(interval);
+//   }
+//   interval = setInterval(() => {
+//     getApiAndEmit(socket);
+//   }, 1000);
+//   socket.on("disconnect from msg", () => {
+//     console.warn("user who send msg disconnected");
+//     clearInterval(interval);
+//   });
+// });
 
 app.use(express.json());
 
